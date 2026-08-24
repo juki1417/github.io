@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>モグラハンター</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: linear-gradient(135deg, #2d1b69, #111827);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game {
+    width: 90%;
+    max-width: 700px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 42px;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #cbd5e1;
+    margin-bottom: 25px;
+}
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.status-box {
+    background: rgba(255,255,255,0.12);
+    border-radius: 15px;
+    padding: 15px;
+    flex: 1;
+}
+
+.status-title {
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+.status-value {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#gameArea {
+    position: relative;
+    height: 430px;
+    background: linear-gradient(#4ade80, #166534);
+    border: 6px solid #92400e;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.hole {
+    position: absolute;
+    width: 100px;
+    height: 55px;
+    background: #3f250f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.mole {
+    position: absolute;
+    width: 75px;
+    height: 75px;
+    background: #a16207;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    user-select: none;
+    transition: transform 0.1s;
+    z-index: 2;
+}
+
+.mole:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.mole.hit {
+    transform: translate(-50%, -50%) scale(0.7);
+}
+
+.start-button {
+    margin-top: 20px;
+    padding: 16px 45px;
+    border: none;
+    border-radius: 50px;
+    background: #facc15;
+    color: #422006;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.start-button:hover {
+    transform: scale(1.05);
+    background: #fde047;
+}
+
+.start-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.message {
+    min-height: 30px;
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.result {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.result-card {
+    background: #1e293b;
+    width: 90%;
+    max-width: 400px;
+    padding: 35px;
+    border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.result-card h2 {
+    font-size: 32px;
+}
+
+.final-score {
+    font-size: 50px;
+    color: #facc15;
+    font-weight: bold;
+    margin: 20px;
+}
+
+.restart {
+    padding: 14px 35px;
+    border: none;
+    border-radius: 30px;
+    background: #facc15;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+
+    h1 {
+        font-size: 32px;
+    }
+
+    #gameArea {
+        height: 350px;
+    }
+
+    .status-value {
+        font-size: 22px;
+    }
+
+    .mole {
+        width: 65px;
+        height: 65px;
+        font-size: 35px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>🐹 モグラハンター</h1>
+
+    <div class="subtitle">
+        30秒でモグラをできるだけたくさん捕まえよう！
+    </div>
+
+    <div class="status">
+
+        <div class="status-box">
+            <div class="status-title">TIME</div>
+            <div class="status-value" id="time">30</div>
+        </div>
+
+        <div class="status-box">
+            <div class="status-title">SCORE</div>
+            <div class="status-value" id="score">0</div>
+        </div>
+
+        <div class="status-box">
+            <div class="status-title">COMBO</div>
+            <div class="status-value" id="combo">0</div>
+        </div>
+
+    </div>
+
+    <div id="gameArea">
+
+        <div class="hole" style="left:20%; top:25%;"></div>
+        <div class="hole" style="left:50%; top:25%;"></div>
+        <div class="hole" style="left:80%; top:25%;"></div>
+
+        <div class="hole" style="left:20%; top:55%;"></div>
+        <div class="hole" style="left:50%; top:55%;"></div>
+        <div class="hole" style="left:80%; top:55%;"></div>
+
+        <div class="hole" style="left:20%; top:85%;"></div>
+        <div class="hole" style="left:50%; top:85%;"></div>
+        <div class="hole" style="left:80%; top:85%;"></div>
+
+    </div>
+
+    <button class="start-button" id="startButton">
+        ゲームスタート
+    </button>
+
+    <div class="message" id="message">
+        スタートを押してゲーム開始！
+    </div>
+
+</div>
+
+
+<div class="result" id="result">
+
+    <div class="result-card">
+
+        <h2>🎉 GAME OVER!</h2>
+
+        <p>あなたのスコア</p>
+
+        <div class="final-score" id="finalScore">
+            0
+        </div>
+
+        <p id="finalMessage"></p>
+
+        <button class="restart" id="restartButton">
+            もう一度遊ぶ
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const gameArea = document.getElementById("gameArea");
+
+const timeDisplay = document.getElementById("time");
+const scoreDisplay = document.getElementById("score");
+const comboDisplay = document.getElementById("combo");
+
+const startButton = document.getElementById("startButton");
+
+const message = document.getElementById("message");
+
+const result = document.getElementById("result");
+const finalScore = document.getElementById("finalScore");
+const finalMessage = document.getElementById("finalMessage");
+
+const restartButton = document.getElementById("restartButton");
+
+let score = 0;
+let combo = 0;
+let time = 30;
+
+let playing = false;
+
+let timer;
+let moleTimer;
+
+const positions = [
+    {x:20, y:25},
+    {x:50, y:25},
+    {x:80, y:25},
+    {x:20, y:55},
+    {x:50, y:55},
+    {x:80, y:55},
+    {x:20, y:85},
+    {x:50, y:85},
+    {x:80, y:85}
+];
+
+
+function startGame() {
+
+    score = 0;
+    combo = 0;
+    time = 30;
+
+    playing = true;
+
+    scoreDisplay.textContent = score;
+    comboDisplay.textContent = combo;
+    timeDisplay.textContent = time;
+
+    startButton.disabled = true;
+
+    message.textContent = "モグラをクリック！";
+
+    result.style.display = "none";
+
+    createMole();
+
+    timer = setInterval(() => {
+
+        time--;
+
+        timeDisplay.textContent = time;
+
+        if (time <= 0) {
+
+            endGame();
+
+        }
+
+    }, 1000);
+
+}
+
+
+function createMole() {
+
+    if (!playing) {
+        return;
+    }
+
+    const oldMole = document.querySelector(".mole");
+
+    if (oldMole) {
+        oldMole.remove();
+    }
+
+    const position =
+        positions[Math.floor(Math.random() * positions.length)];
+
+    const mole = document.createElement("div");
+
+    mole.className = "mole";
+
+    mole.textContent = "🐹";
+
+    mole.style.left = position.x + "%";
+    mole.style.top = position.y + "%";
+
+    mole.onclick = function(event) {
+
+        event.stopPropagation();
+
+        hitMole(mole);
+
+    };
+
+    gameArea.appendChild(mole);
+
+    moleTimer = setTimeout(createMole, 700);
+
+}
+
+
+function hitMole(mole) {
+
+    if (!playing) {
+        return;
+    }
+
+    score++;
+
+    combo++;
+
+    scoreDisplay.textContent = score;
+
+    comboDisplay.textContent = combo;
+
+    mole.classList.add("hit");
+
+    if (combo >= 5) {
+
+        message.textContent =
+            "🔥 " + combo + " COMBO！すごい！";
+
+    } else {
+
+        message.textContent =
+            "GOOD！ " + combo + " COMBO";
+
+    }
+
+    setTimeout(() => {
+
+        if (mole.parentNode) {
+            mole.remove();
+        }
+
+    }, 100);
+
+}
+
+
+gameArea.onclick = function() {
+
+    if (!playing) {
+        return;
+    }
+
+    combo = 0;
+
+    comboDisplay.textContent = combo;
+
+    message.textContent = "MISS！コンボが途切れた！";
+
+};
+
+
+function endGame() {
+
+    playing = false;
+
+    clearInterval(timer);
+    clearTimeout(moleTimer);
+
+    const mole = document.querySelector(".mole");
+
+    if (mole) {
+        mole.remove();
+    }
+
+    startButton.disabled = false;
+
+    finalScore.textContent = score;
+
+    if (score >= 30) {
+
+        finalMessage.textContent =
+            "🏆 すごい！モグラハンターの達人！";
+
+    } else if (score >= 20) {
+
+        finalMessage.textContent =
+            "🔥 ナイスプレイ！かなり上手です！";
+
+    } else if (score >= 10) {
+
+        finalMessage.textContent =
+            "👍 いい感じ！もう一度挑戦してみよう！";
+
+    } else {
+
+        finalMessage.textContent =
+            "💪 もっと練習してハイスコアを目指そう！";
+
+    }
+
+    result.style.display = "flex";
+
+}
+
+
+startButton.onclick = startGame;
+
+restartButton.onclick = startGame;
+
+
+</script>
+
+</body>
+</html>

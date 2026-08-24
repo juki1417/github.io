@@ -1,0 +1,572 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>深夜のコンビニ脱出</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Yu Gothic", sans-serif;
+    background: #10131c;
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game {
+    width: 92%;
+    max-width: 700px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 40px;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #aaa;
+    margin-bottom: 25px;
+}
+
+.status {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.status-box {
+    flex: 1;
+    background: #1d2330;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.status-title {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.status-value {
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#question {
+    background: #191e29;
+    padding: 30px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+
+#questionText {
+    font-size: 25px;
+    line-height: 1.6;
+}
+
+.choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.choice {
+    border: none;
+    border-radius: 15px;
+    padding: 25px 10px;
+    background: #252c3b;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.choice:hover {
+    transform: scale(1.04);
+    background: #333c50;
+}
+
+.start-button,
+.restart-button {
+    margin-top: 25px;
+    border: none;
+    border-radius: 30px;
+    padding: 15px 40px;
+    font-size: 19px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #f5c542;
+    color: #171717;
+}
+
+.message {
+    min-height: 35px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#gameScreen {
+    display: none;
+}
+
+.result {
+    display: none;
+}
+
+.result h2 {
+    font-size: 35px;
+}
+
+.final-score {
+    font-size: 55px;
+    font-weight: bold;
+    margin: 20px;
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 30px;
+    }
+
+    .choices {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <!-- タイトル画面 -->
+    <div id="titleScreen">
+
+        <h1>🌙 深夜のコンビニ脱出</h1>
+
+        <div class="subtitle">
+            あなたは深夜のコンビニ店員。<br>
+            正しい判断をして朝まで生き残ろう。
+        </div>
+
+        <p>
+            正しい選択をするとスコアアップ！<br>
+            間違えると冷静さが減少します。
+        </p>
+
+        <button class="start-button" onclick="startGame()">
+            ゲームスタート
+        </button>
+
+    </div>
+
+
+    <!-- ゲーム画面 -->
+    <div id="gameScreen">
+
+        <h1>🌙 深夜のコンビニ</h1>
+
+        <div class="status">
+
+            <div class="status-box">
+                <div class="status-title">SCORE</div>
+                <div class="status-value" id="score">
+                    0
+                </div>
+            </div>
+
+            <div class="status-box">
+                <div class="status-title">TIME</div>
+                <div class="status-value" id="time">
+                    30
+                </div>
+            </div>
+
+            <div class="status-box">
+                <div class="status-title">冷静さ</div>
+                <div class="status-value" id="calm">
+                    100
+                </div>
+            </div>
+
+        </div>
+
+
+        <div id="question">
+
+            <div id="questionText">
+                問題
+            </div>
+
+        </div>
+
+
+        <div class="choices" id="choices">
+        </div>
+
+
+        <div class="message" id="message">
+        </div>
+
+    </div>
+
+
+    <!-- 結果画面 -->
+    <div class="result" id="resultScreen">
+
+        <h1>🌅 朝になった！</h1>
+
+        <h2 id="resultTitle">
+            結果
+        </h2>
+
+        <div class="final-score" id="finalScore">
+            0
+        </div>
+
+        <p id="resultMessage">
+        </p>
+
+        <button class="restart-button" onclick="startGame()">
+            もう一度遊ぶ
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let score = 0;
+let time = 30;
+let calm = 100;
+
+let playing = false;
+let timer;
+
+let currentQuestion = 0;
+
+
+/*
+問題データ
+
+correct は正解の選択肢番号です。
+0 = 1番目
+1 = 2番目
+2 = 3番目
+*/
+
+const questions = [
+
+    {
+        text: "突然、店内の電気が消えた！まず何をする？",
+
+        choices: [
+            "🔦 懐中電灯を探す",
+            "📱 SNSに投稿する",
+            "🏃 すぐ外へ逃げる",
+            "😴 とりあえず寝る"
+        ],
+
+        correct: 0
+    },
+
+    {
+        text: "レジの近くから物音がする。どうする？",
+
+        choices: [
+            "🔊 大声で叫ぶ",
+            "🔦 周囲を確認する",
+            "🍙 おにぎりを食べる",
+            "💤 無視する"
+        ],
+
+        correct: 1
+    },
+
+    {
+        text: "冷蔵庫から警告音が聞こえる！",
+
+        choices: [
+            "🔌 電源を確認する",
+            "📦 商品を全部出す",
+            "🎵 音楽を流す",
+            "🏃 店から逃げる"
+        ],
+
+        correct: 0
+    },
+
+    {
+        text: "店の外に人影が見える。",
+
+        choices: [
+            "🚪 すぐ外に出る",
+            "👀 店内から様子を見る",
+            "📸 写真を撮る",
+            "💃 踊る"
+        ],
+
+        correct: 1
+    },
+
+    {
+        text: "停電が復旧した！",
+
+        choices: [
+            "📋 店内を確認する",
+            "🎉 大喜びする",
+            "🛒 商品を持って帰る",
+            "😴 寝る"
+        ],
+
+        correct: 0
+    },
+
+    {
+        text: "最後の問題。朝まであと少し！",
+
+        choices: [
+            "☀️ 店内を整理する",
+            "🏃 逃げる",
+            "🎮 ゲームをする",
+            "🍜 ラーメンを作る"
+        ],
+
+        correct: 0
+    }
+
+];
+
+
+function startGame() {
+
+    score = 0;
+    time = 30;
+    calm = 100;
+    currentQuestion = 0;
+
+    playing = true;
+
+    document.getElementById("titleScreen").style.display = "none";
+
+    document.getElementById("resultScreen").style.display = "none";
+
+    document.getElementById("gameScreen").style.display = "block";
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("time").textContent = time;
+    document.getElementById("calm").textContent = calm;
+
+    document.getElementById("message").textContent = "";
+
+    showQuestion();
+
+    clearInterval(timer);
+
+    timer = setInterval(function() {
+
+        time--;
+
+        document.getElementById("time").textContent = time;
+
+        if (time <= 0) {
+
+            endGame();
+
+        }
+
+    }, 1000);
+
+}
+
+
+function showQuestion() {
+
+    if (!playing) {
+        return;
+    }
+
+    if (currentQuestion >= questions.length) {
+
+        endGame();
+
+        return;
+
+    }
+
+    const question = questions[currentQuestion];
+
+    document.getElementById("questionText").textContent =
+        question.text;
+
+    const choices =
+        document.getElementById("choices");
+
+    choices.innerHTML = "";
+
+
+    question.choices.forEach(function(choice, index) {
+
+        const button =
+            document.createElement("button");
+
+        button.className = "choice";
+
+        button.textContent = choice;
+
+        button.onclick = function() {
+
+            answer(index);
+
+        };
+
+        choices.appendChild(button);
+
+    });
+
+}
+
+
+function answer(selected) {
+
+    if (!playing) {
+        return;
+    }
+
+    const question = questions[currentQuestion];
+
+    const message =
+        document.getElementById("message");
+
+
+    if (selected === question.correct) {
+
+        score += 100;
+
+        message.textContent =
+            "✅ 正解！ +100点";
+
+    } else {
+
+        calm -= 20;
+
+        if (calm < 0) {
+            calm = 0;
+        }
+
+        message.textContent =
+            "❌ 判断ミス！ 冷静さ -20";
+
+    }
+
+
+    document.getElementById("score").textContent =
+        score;
+
+    document.getElementById("calm").textContent =
+        calm;
+
+
+    if (calm <= 0) {
+
+        endGame();
+
+        return;
+
+    }
+
+
+    currentQuestion++;
+
+    setTimeout(function() {
+
+        showQuestion();
+
+    }, 500);
+
+}
+
+
+function endGame() {
+
+    if (!playing) {
+        return;
+    }
+
+    playing = false;
+
+    clearInterval(timer);
+
+    document.getElementById("gameScreen").style.display =
+        "none";
+
+    document.getElementById("resultScreen").style.display =
+        "block";
+
+
+    document.getElementById("finalScore").textContent =
+        score + " 点";
+
+
+    let title = "";
+    let message = "";
+
+
+    if (score >= 500) {
+
+        title = "🏆 伝説の店員！";
+
+        message =
+            "あなたは冷静な判断で朝まで店を守り抜きました！";
+
+    } else if (score >= 300) {
+
+        title = "⭐ 優秀な店員！";
+
+        message =
+            "かなり冷静な判断ができています！";
+
+    } else if (score >= 100) {
+
+        title = "👍 新人店員！";
+
+        message =
+            "もう少し経験を積めば一人前です！";
+
+    } else {
+
+        title = "😵 研修からやり直し！";
+
+        message =
+            "深夜勤務はもう少し練習が必要です……";
+
+    }
+
+
+    document.getElementById("resultTitle").textContent =
+        title;
+
+    document.getElementById("resultMessage").textContent =
+        message;
+
+}
+
+</script>
+
+</body>
+</html>
+```
